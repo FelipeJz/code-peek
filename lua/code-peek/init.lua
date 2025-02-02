@@ -49,7 +49,15 @@ function M.open_code_peek()
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, buf_lines)
 
+  -- Try to detect filetype based on the filename.
   local ft = vim.filetype.match({ filename = filename })
+  -- Infer filetype from the extension
+  if not ft then
+    local ext = filename:match("^.+(%..+)$")
+    if ext then
+      ft = ext:sub(2)
+    end
+  end
   if ft then
     vim.api.nvim_buf_set_option(buf, 'filetype', ft)
   end
