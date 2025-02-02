@@ -9,8 +9,8 @@ Using Lazy
 ```lua
 {
   "felipejz/code-peek.nvim",
-  config = function()
-    require("code-peek").setup()
+ config = function()
+    require("code-peek").setup({ full_file = false, context_radius = 20 })
     vim.keymap.set("n", "<leader>pp", ":CodePeek<cr>")
   end,
 }

@@ -1,5 +1,10 @@
 local M = {}
 
+local config = {
+  full_file = false,
+  context_radius = 20,
+}
+
 function M.open_code_peek()
   local params = vim.lsp.util.make_position_params()
 
@@ -37,13 +42,17 @@ function M.open_code_peek()
     return
   end
 
-  local context_radius = 20
-  local begin_line = math.max(1, start_line + 1 - context_radius)
-  local finish_line = math.min(#lines, end_line + 1 + context_radius)
-
   local buf_lines = {}
-  for i = begin_line, finish_line do
-    table.insert(buf_lines, lines[i])
+  if config.full_file then
+    -- Load the entire file
+    buf_lines = lines
+  else
+    -- Load only a snippet around the definition using context_radius.
+    local begin_line = math.max(1, start_line + 1 - config.context_radius)
+    local finish_line = math.min(#lines, end_line + 1 + config.context_radius)
+    for i = begin_line, finish_line do
+      table.insert(buf_lines, lines[i])
+    end
   end
 
   local buf = vim.api.nvim_create_buf(false, true)
@@ -80,8 +89,10 @@ function M.open_code_peek()
 
   local win = vim.api.nvim_open_win(buf, true, opts)
 
-  -- Jump to the definition line relative to the buffer’s contents.
-  local cursor_line = start_line + 1 - begin_line + 1
+  -- If not loading the full file, adjust the cursor to point to the definition in the snippet.
+  local cursor_line = config.full_file and (start_line + 1) or
+  (start_line + 1 - math.max(1, start_line + 1 - config.context_radius) + 1)
+  -- For the full file, just set the cursor to the definition line.
   vim.api.nvim_win_set_cursor(win, { cursor_line, 0 })
 
   -- Close on leave
@@ -97,7 +108,9 @@ function M.open_code_peek()
   )
 end
 
-function M.setup()
+function M.setup(opts)
+  opts = opts or {}
+  config = vim.tbl_extend("force", config, opts)
   vim.api.nvim_create_user_command("CodePeek", function()
     M.open_code_peek()
   end, { desc = "Peek at code definition under cursor" })
