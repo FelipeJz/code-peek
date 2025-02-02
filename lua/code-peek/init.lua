@@ -55,8 +55,21 @@ function M.open_code_peek()
     end
   end
 
-  local buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, buf_lines)
+  -- Check if a buffer with the given filename already exists.
+  local existing_buf = vim.fn.bufnr(filename, false)
+  local buf
+  if existing_buf ~= -1 then
+    buf = existing_buf
+    -- Ensure the buffer is modifiable by clearing its buftype
+    vim.api.nvim_buf_set_option(buf, "buftype", "")
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, buf_lines)
+  else
+    buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_option(buf, "buftype", "")
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, buf_lines)
+    -- Set the buffer name to the original filename so saving works.
+    vim.api.nvim_buf_set_name(buf, filename)
+  end
 
   -- Try to detect filetype based on the filename.
   local ft = vim.filetype.match({ filename = filename })
